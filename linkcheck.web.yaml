@@ -1,0 +1,13 @@
+# Production crawl against a public HTTPS site.
+start_url: https://example.com/
+allow_external: false
+workers: 8
+timeout: 15s
+max_links: 200
+requests_per_minute: 60
+allowed_extensions:
+  - .html
+  - .htm
+ignore_robots: false
+cache_path: .linkcheck-cache.json
+healthcheck: false

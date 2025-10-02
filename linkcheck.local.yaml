@@ -1,0 +1,13 @@
+# Development crawl against a local server.
+start_url: http://localhost:8080/
+allow_external: false
+workers: 4
+timeout: 5s
+max_links: 100
+requests_per_minute: 120
+allowed_extensions:
+  - .html
+  - .htm
+ignore_robots: true
+cache_path: ""
+healthcheck: false
