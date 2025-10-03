@@ -4,6 +4,7 @@ allow_external: false
 workers: 4
 timeout: 5s
 max_links: 100
+max_depth: -1
 requests_per_minute: 120
 allowed_extensions:
   - .html

@@ -15,10 +15,12 @@ type Config struct {
 	Client            *http.Client
 	Timeout           time.Duration
 	MaxPages          int
+	MaxDepth          int
 	RequestsPerMinute int
 	AllowedExtensions []string
 	IgnoreRobots      bool
 	CachePath         string
+	MarkdownDir       string
 	Progress          func(string)
 }
 
@@ -33,11 +35,13 @@ type Report struct {
 
 // PageReport summarizes the crawl result for one page.
 type PageReport struct {
-	URL       string
-	Status    int
-	Error     string
-	Links     []Link
-	Retrieved time.Duration
+	URL                   string
+	Status                int
+	Error                 string
+	Links                 []Link
+	Retrieved             time.Duration
+	MarkdownPath          string
+	MarkdownSkippedReason string
 }
 
 // Link describes a discovered link and its classification.
@@ -78,4 +82,5 @@ type Stats struct {
 	SkippedByRobots      int
 	SkippedByExtension   int
 	SkippedByLimit       int
+	SkippedByDepth       int
 }

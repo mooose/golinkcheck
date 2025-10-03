@@ -7,13 +7,13 @@ func (c *crawler) internalWorker(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case pageURL, ok := <-c.internalJobs:
+		case job, ok := <-c.internalJobs:
 			if !ok {
 				return
 			}
 			func() {
 				defer c.internalWG.Done()
-				c.processInternal(ctx, pageURL)
+				c.processInternal(ctx, job)
 			}()
 		}
 	}

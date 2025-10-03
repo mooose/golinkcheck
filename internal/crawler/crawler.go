@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -15,13 +16,15 @@ type crawler struct {
 	allowExternal     bool
 	start             *url.URL
 	maxPages          int
+	maxDepth          int
 	allowedExt        map[string]struct{}
 	ignoreRobots      bool
 	cachePath         string
 	requestsPerMinute int
 	progress          func(string)
+	markdownDir       string
 
-	internalJobs chan string
+	internalJobs chan internalJob
 	externalJobs chan externalJob
 
 	internalWG sync.WaitGroup
@@ -37,8 +40,11 @@ type crawler struct {
 	errors   []Error
 	stats    Stats
 
-	cacheMu sync.RWMutex
-	cache   cacheData
+	cacheMu       sync.RWMutex
+	cache         cacheData
+	markdownMu    sync.Mutex
+	boilerplateMu sync.Mutex
+	boilerplates  map[string]*boilerplateInfo
 
 	rateLimiter chan struct{}
 	rateTicker  *time.Ticker
@@ -95,6 +101,11 @@ func Crawl(ctx context.Context, cfg Config) (*Report, error) {
 		cfg.RequestsPerMinute = 60
 	}
 
+	maxDepth := cfg.MaxDepth
+	if maxDepth < 0 {
+		maxDepth = -1
+	}
+
 	allowedExt := buildAllowedExtensions(cfg.AllowedExtensions)
 
 	cachePath := cfg.CachePath
@@ -109,17 +120,20 @@ func Crawl(ctx context.Context, cfg Config) (*Report, error) {
 		allowExternal:     cfg.AllowExternal,
 		start:             parsed,
 		maxPages:          cfg.MaxPages,
+		maxDepth:          maxDepth,
 		allowedExt:        allowedExt,
 		ignoreRobots:      cfg.IgnoreRobots,
 		cachePath:         cachePath,
 		requestsPerMinute: cfg.RequestsPerMinute,
-		internalJobs:      make(chan string, maxWorkers*2),
+		internalJobs:      make(chan internalJob, maxWorkers*2),
 		visitedInternal:   map[string]struct{}{},
 		visitedExternal:   map[string]struct{}{},
 		pages:             map[string]*PageReport{},
 		robots:            map[string]*robotsGroup{},
 		cache:             cacheData,
 		progress:          cfg.Progress,
+		markdownDir:       strings.TrimSpace(cfg.MarkdownDir),
+		boilerplates:      map[string]*boilerplateInfo{},
 	}
 
 	if cachePath != "" {
@@ -156,7 +170,7 @@ func Crawl(ctx context.Context, cfg Config) (*Report, error) {
 	}
 
 	started := time.Now()
-	c.enqueueInternal(parsed.String())
+	c.enqueueInternal(parsed.String(), 0)
 
 	c.internalWG.Wait()
 	close(c.internalJobs)

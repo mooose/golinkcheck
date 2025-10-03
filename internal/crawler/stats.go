@@ -50,6 +50,12 @@ func (c *crawler) recordSkippedLimit() {
 	c.mu.Unlock()
 }
 
+func (c *crawler) recordSkippedDepth() {
+	c.mu.Lock()
+	c.stats.SkippedByDepth++
+	c.mu.Unlock()
+}
+
 func (c *crawler) collectStats(duration time.Duration) Stats {
 	c.mu.Lock()
 	defer c.mu.Unlock()
